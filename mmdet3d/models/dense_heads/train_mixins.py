@@ -139,7 +139,7 @@ class AnchorTrainMixin(object):
                 if self.assign_per_class:
                     gt_per_cls = (gt_labels == i)
                     anchor_targets = self.anchor_target_single_assigner(
-                        assigner, current_anchors, gt_bboxes[gt_per_cls, :],
+                        assigner, current_anchors, gt_bboxes[gt_per_cls.cpu(), :],
                         gt_bboxes_ignore, gt_labels[gt_per_cls], input_meta,
                         num_classes, sampling)
                 else:
@@ -196,7 +196,7 @@ class AnchorTrainMixin(object):
                 if self.assign_per_class:
                     gt_per_cls = (gt_labels == i)
                     anchor_targets = self.anchor_target_single_assigner(
-                        assigner, current_anchors, gt_bboxes[gt_per_cls, :],
+                        assigner, current_anchors, gt_bboxes[gt_per_cls.cpu(), :],
                         gt_bboxes_ignore, gt_labels[gt_per_cls], input_meta,
                         num_classes, sampling)
                 else:
@@ -337,7 +337,7 @@ def get_direction_target(anchors,
     rot_gt = reg_targets[..., 6] + anchors[..., 6]
     offset_rot = limit_period(rot_gt - dir_offset, dir_limit_offset, 2 * np.pi)
     dir_cls_targets = torch.floor(offset_rot / (2 * np.pi / num_bins)).long()
-    dir_cls_targets = torch.clamp(dir_cls_targets, min=0, max=num_bins - 1)
+    dir_cls_targets = torch.clamp(dir_cls_targets.int(), min=0, max=num_bins - 1)
     if one_hot:
         dir_targets = torch.zeros(
             *list(dir_cls_targets.shape),
