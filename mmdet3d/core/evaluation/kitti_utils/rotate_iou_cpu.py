@@ -15,8 +15,11 @@ def div_up(m, n):
 
 @numba.jit('(float32[:], float32[:], float32[:])')
 def triangle_area(a, b, c):
-    return ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) *
+    tri_area =  ((a[0] - c[0]) * (b[1] - c[1]) - (a[1] - c[1]) *
             (b[0] - c[0])) / 2.0
+    if abs(tri_area) < 1.0e-02:
+        tri_area = 0.0
+    return tri_area
 
 
 @numba.jit('(float32[:], int32)')
@@ -190,12 +193,11 @@ def quadrilateral_intersection(pts1, pts2, int_pts):
     temp_pts = np.empty((2,), dtype=numba.float32)
     for i in range(4):
         for j in range(4):
-            has_pts = line_segment_intersection(pts1, pts2, i, j, temp_pts)
+            has_pts = line_segment_intersection_v1(pts1, pts2, i, j, temp_pts)
             if has_pts:
                 int_pts[num_of_inter * 2] = temp_pts[0]
                 int_pts[num_of_inter * 2 + 1] = temp_pts[1]
                 num_of_inter += 1
-
     return num_of_inter
 
 
@@ -237,6 +239,9 @@ def inter(rbbox1, rbbox2):
 
     num_intersection = quadrilateral_intersection(corners1, corners2,
                                                   intersection_corners)
+    if num_intersection < 3:
+        return 0.0
+
     sort_vertex_in_convex_polygon(intersection_corners, num_intersection)
 
     return area(intersection_corners, num_intersection)
@@ -247,7 +252,6 @@ def instance_iou_eval(rbox1, rbox2, criterion=-1):
     area1 = rbox1[2] * rbox1[3]
     area2 = rbox2[2] * rbox2[3]
     area_inter = inter(rbox1, rbox2)
-
     if criterion == -1:
         return area_inter / (area1 + area2 - area_inter)
     elif criterion == 0:
